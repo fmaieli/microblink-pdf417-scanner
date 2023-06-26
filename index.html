@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <div id="screen-initial">
+      <h1 id="msg">Loading...</h1>
+      <progress id="load-progress" value="0" max="100"></progress>
+    </div>
+
+    <div id="screen-start" class="hidden">
+      <a href="#" id="start-scan">Start scan</a>
+    </div>
+
+    <div id="screen-scanning" class="hidden">
+      <video id="camera-feed" playsinline></video>
+      <p id="camera-guides">
+        Point the camera towards the barcode on ID document.
+      </p>
+    </div>
+
+    <script src="https://unpkg.com/@microblink/blinkid-in-browser-sdk@6.1.0/dist/blinkid-sdk.min.js"></script>
+    <script src="https://unpkg.com/microblink/dist/microblink.min.js"></script>
+
+    <script>
+      Microblink.SDK.SetRecognizers(['MRTD']);
+      Microblink.SDK.SetAuthorization(
+        'Bearer ZDU1ZjA3MTJiMTQ3NDVmNDg4N2M3OTNmMzNhM2JiODQ6MWZlYjhhYWQtY2FjYy00NTE0LThjNGUtOWZiMDdkZTIwNmY4' +
+          btoa(
+            'd55f0712b14745f4887c793f33a3bb84:1feb8aad-cacc-4514-8c4e-9fb07de206f8'
+          )
+      );
+    </script>
+
+    <script>
+      /**
+       * BlinkID In-browser SDK demo app which demonstrates how to:
+       *
+       * - Change default SDK settings
+       * - Scan the barcode from the identity document with web camera
+       */
+
+      // General UI helpers
+      const initialMessageEl = document.getElementById('msg');
+      const progressEl = document.getElementById('load-progress');
+
+      // UI elements for scanning feedback
+      const cameraFeed = document.getElementById('camera-feed');
+      const scanFeedback = document.getElementById('camera-guides');
+
+      /**
+       * Check browser support, customize settings and load WASM SDK.
+       */
+      async function main() {
+        // Check if browser has proper support for WebAssembly
+        if (!BlinkIDSDK.isBrowserSupported()) {
+          initialMessageEl.innerText = 'This browser is not supported!';
+          return;
+        }
+
+        // 1. You can request a free trial license key, after you register, at Microblink Developer Hub
+        const licenseKey =
+          'sRwAAAYXanMtaGI3a2puLnN0YWNrYmxpdHouaW/9Z2o6+VykFesm3W6mCApnPC/ol8IrNom5winyhdd+AaztPMz8dGAM/wvr7vJw0lKxbbU1J4Lx+KjVzjVB5/dXWlArU66fcTfIdazvV8Gh/P+uk/xkzOFHR1JC7ZInWRAOrs/2B45ZSC3OR8kt+A9mRe99ERg3TmDrvOCVf3HRtItueZ2dUEglRyErRSdbOeyzb0s7Mtt8oHRhcYRlg+rzaGjfvA==';
+
+        // 2. Create instance of SDK load settings with your license key
+        const loadSettings = new BlinkIDSDK.WasmSDKLoadSettings(licenseKey);
+
+        // [OPTIONAL] Change default settings
+        // Show or hide hello message in browser console when WASM is successfully loaded
+        loadSettings.allowHelloMessage = true;
+
+        // In order to provide better UX, display progress bar while loading the SDK
+        loadSettings.loadProgressCallback = (progress) =>
+          (progressEl.value = progress);
+
+        // Set relative or absolute location of the engine, i.e. WASM and support JS files
+        loadSettings.engineLocation =
+          'https://unpkg.com/@microblink/blinkid-in-browser-sdk@6.1.0/resources/';
+
+        // Set absolute location of the worker file
+        // IMPORTANT: function getWorkerLocation is a workaround for the CodePen since native Web Workers are not supported
+        loadSettings.workerLocation = await getWorkerLocation(
+          'https://unpkg.com/@microblink/blinkid-in-browser-sdk@6.1.0/resources/BlinkIDWasmSDK.worker.min.js'
+        );
+
+        // 3. Load SDK
+        BlinkIDSDK.loadWasmModule(loadSettings).then(
+          (sdk) => {
+            document.getElementById('screen-initial')?.classList.add('hidden');
+            document.getElementById('screen-start')?.classList.remove('hidden');
+            document
+              .getElementById('start-scan')
+              ?.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                startScan(sdk);
+              });
+          },
+          (error) => {
+            initialMessageEl.innerText = 'Failed to load SDK!';
+            console.error('Failed to load SDK!', error);
+          }
+        );
+      }
+      /**
+       * Scan single side of identity document with web camera.
+       */
+      async function startScan(sdk) {
+        document.getElementById('screen-start')?.classList.add('hidden');
+        document.getElementById('screen-scanning')?.classList.remove('hidden');
+
+        // 1. Create a recognizer objects which will be used to recognize single image or stream of images.
+        //
+        // ID Barcode Recognizer - scan barcodes from various ID documents
+        const idBarcodeRecognizer = await BlinkIDSDK.createIdBarcodeRecognizer(
+          sdk
+        );
+        // [OPTIONAL] Create a callbacks object that will receive recognition events, such as detected object location etc.
+        const callbacks = {
+          onDetectionFailed: () =>
+            (scanFeedback.innerText = 'Detection failed'),
+        };
+
+        // 2. Create a RecognizerRunner object which orchestrates the recognition with one or more
+        //    recognizer objects.
+        const recognizerRunner = await BlinkIDSDK.createRecognizerRunner(
+          // SDK instance to use
+          sdk,
+          // List of recognizer objects that will be associated with created RecognizerRunner object
+          [idBarcodeRecognizer],
+          // [OPTIONAL] Should recognition pipeline stop as soon as first recognizer in chain finished recognition
+          false,
+          // [OPTIONAL] Callbacks object that will receive recognition events
+          callbacks
+        );
+
+        // 3. Create a VideoRecognizer object and attach it to HTMLVideoElement that will be used for displaying the camera feed
+        const videoRecognizer =
+          await BlinkIDSDK.VideoRecognizer.createVideoRecognizerFromCameraStream(
+            cameraFeed,
+            recognizerRunner
+          );
+
+        // 4. Start the recognition and await for the results
+        const processResult = await videoRecognizer.recognize();
+
+        // 5. If recognition was successful, obtain the result and display it
+        if (processResult !== BlinkIDSDK.RecognizerResultState.Empty) {
+          const idBarcodeResult = await idBarcodeRecognizer.getResult();
+          if (
+            idBarcodeResult.state !== BlinkIDSDK.RecognizerResultState.Empty
+          ) {
+            console.log('IDBarcode results', idBarcodeResult);
+            const firstName = idBarcodeResult.firstName;
+            const lastName = idBarcodeResult.lastName;
+            const year = idBarcodeResult.dateOfBirth.year;
+            const month = idBarcodeResult.dateOfBirth.month;
+            const day = idBarcodeResult.dateOfBirth.day;
+            const address = idBarcodeResult.address;
+
+            alert(
+              `Hello, ${firstName} ${lastName}!\nYou were born on ${year}-${month}-${day} and you live at ${address}.`
+            );
+          }
+        } else {
+          alert('Could not extract information!');
+        }
+
+        // 7. Release all resources allocated on the WebAssembly heap and associated with camera stream
+        // Release browser resources associated with the camera stream
+        videoRecognizer?.releaseVideoFeed();
+        // Release memory on WebAssembly heap used by the RecognizerRunner
+        recognizerRunner?.delete();
+        // Release memory on WebAssembly heap used by the recognizer
+        idBarcodeRecognizer?.delete();
+
+        // Hide scanning screen and show scan button again
+        document.getElementById('screen-start')?.classList.remove('hidden');
+        document.getElementById('screen-scanning')?.classList.add('hidden');
+      }
+
+      function getWorkerLocation(path) {
+        return new Promise((resolve) => {
+          window
+            .fetch(path)
+            .then((response) => response.text())
+            .then((data) => {
+              const blob = new Blob([data], { type: 'application/javascript' });
+              const url = URL.createObjectURL(blob);
+              resolve(url);
+            });
+        });
+      }
+
+      // Run
+      main();
+    </script>
+  </body>
+</html>
