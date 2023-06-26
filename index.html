@@ -2,16 +2,130 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Web SDK Scandit</title>
+    <script src="https://cdn.jsdelivr.net/npm/scandit-sdk@5.x"></script>
+    <script
+      src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+      integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+      integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+      integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+      crossorigin="anonymous"
+    ></script>
+
+    <link
+      href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" type="text/html" href="style.css" />
   </head>
+
   <body>
-    <div id="screen-initial">
-      <h1 id="msg">Loading...</h1>
-      <progress id="load-progress" value="0" max="100"></progress>
+    <div class="container">
+      <button class="btn btn-block" id="start-scan">
+        <img
+          src="https://github.com/fmaieli/scandit-pdf417-scanner/blob/main/assets/qr-img.jpeg?raw=true"
+          width="250"
+          height="250"
+        />
+      </button>
+
+      <div class="col-md-8 order-md-1">
+        <form class="needs-validation" novalidate="">
+          <div class="row" id="nombreyapellido">
+            <div class="col-md-6 mb-3">
+              <label for="nombre">Nombre</label>
+              <input
+                type="text"
+                class="form-control"
+                id="nombre"
+                placeholder=""
+                value=""
+                required=""
+              />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="apellido">Apellido</label>
+              <input
+                type="text"
+                class="form-control"
+                id="apellido"
+                placeholder=""
+                value=""
+                required=""
+              />
+            </div>
+          </div>
+          <div class="row" id="sexoydni">
+            <div class="col-md-6 mb-3">
+              <label for="sexo">Sexo</label>
+              <input
+                type="text"
+                class="form-control"
+                id="sexo"
+                placeholder=""
+                value=""
+                required=""
+              />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="dni">DNI</label>
+              <input
+                type="text"
+                class="form-control"
+                id="dni"
+                placeholder=""
+                value=""
+                required=""
+              />
+            </div>
+          </div>
+          <div class="row" id="nacyemision">
+            <div class="col-md-6 mb-3">
+              <label for="fechaNac">Fecha de Nacimiento</label>
+              <input
+                type="text"
+                class="form-control"
+                id="fechaNac"
+                placeholder=""
+                value=""
+                required=""
+              />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="fechaEmision">Fecha de Emisión</label>
+              <input
+                type="text"
+                class="form-control"
+                id="fechaEmision"
+                placeholder=""
+                value=""
+                required=""
+              />
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
 
-    <div id="screen-start" class="hidden">
-      <a href="#" id="start-scan">Start scan</a>
-    </div>
+    <!-- <div id="screen-initial">
+      <h1 id="msg">Loading...</h1>
+      <progress id="load-progress" value="0" max="100"></progress>
+    </div> -->
 
     <div id="screen-scanning" class="hidden">
       <video id="camera-feed" playsinline></video>
@@ -43,7 +157,7 @@
 
       // General UI helpers
       const initialMessageEl = document.getElementById('msg');
-      const progressEl = document.getElementById('load-progress');
+      // const progressEl = document.getElementById('load-progress');
 
       // UI elements for scanning feedback
       const cameraFeed = document.getElementById('camera-feed');
@@ -71,8 +185,8 @@
         loadSettings.allowHelloMessage = true;
 
         // In order to provide better UX, display progress bar while loading the SDK
-        loadSettings.loadProgressCallback = (progress) =>
-          (progressEl.value = progress);
+        // loadSettings.loadProgressCallback = (progress) =>
+        //   (progressEl.value = progress);
 
         // Set relative or absolute location of the engine, i.e. WASM and support JS files
         loadSettings.engineLocation =
@@ -106,7 +220,7 @@
        * Scan single side of identity document with web camera.
        */
       async function startScan(sdk) {
-        document.getElementById('screen-start')?.classList.add('hidden');
+        showHideElements(true);
         document.getElementById('screen-scanning')?.classList.remove('hidden');
 
         // 1. Create a recognizer objects which will be used to recognize single image or stream of images.
@@ -150,17 +264,25 @@
           if (
             idBarcodeResult.state !== BlinkIDSDK.RecognizerResultState.Empty
           ) {
-            console.log('IDBarcode results', idBarcodeResult);
-            const firstName = idBarcodeResult.firstName;
-            const lastName = idBarcodeResult.lastName;
-            const year = idBarcodeResult.dateOfBirth.year;
-            const month = idBarcodeResult.dateOfBirth.month;
-            const day = idBarcodeResult.dateOfBirth.day;
-            const address = idBarcodeResult.address;
-
-            alert(
-              `Hello, ${firstName} ${lastName}!\nYou were born on ${year}-${month}-${day} and you live at ${address}.`
+            let decodeData = arrayDecodeData(
+              idBarcodeResult.barcodeData.stringData
             );
+
+            document.getElementById('nombreyapellido').hidden = false;
+            $('#nombre').val(decodeData[2]);
+            $('#apellido').val(decodeData[1]);
+
+            document.getElementById('sexoydni').hidden = false;
+            if (decodeData[3] == 'M') {
+              $('#sexo').val('Masculino');
+            } else {
+              $('#sexo').val('Femenino');
+            }
+            $('#dni').val(decodeData[4]);
+
+            document.getElementById('nacyemision').hidden = false;
+            $('#fechaNac').val(decodeData[6]);
+            $('#fechaEmision').val(decodeData[7]);
           }
         } else {
           alert('Could not extract information!');
@@ -175,8 +297,8 @@
         idBarcodeRecognizer?.delete();
 
         // Hide scanning screen and show scan button again
-        document.getElementById('screen-start')?.classList.remove('hidden');
         document.getElementById('screen-scanning')?.classList.add('hidden');
+        showHideElements(false);
       }
 
       function getWorkerLocation(path) {
@@ -190,6 +312,18 @@
               resolve(url);
             });
         });
+      }
+
+      function showHideElements(boolean) {
+        document.getElementById('start-scan').hidden = boolean;
+        document.getElementById('nombreyapellido').hidden = boolean;
+        document.getElementById('sexoydni').hidden = boolean;
+        document.getElementById('nacyemision').hidden = boolean;
+      }
+
+      function arrayDecodeData(string) {
+        let arrDecodedData = string.split('@');
+        return arrDecodedData;
       }
 
       // Run

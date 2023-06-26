@@ -1,8 +1,35 @@
 body {
-  margin: 0;
-  padding: 0;
-  font-size: 20px;
+  background-color: white;
+  color: black;
+  text-align: center;
+  font: 400 2.5vh 'Open Sans', sans-serif;
 }
+
+h1,
+h2 {
+  font-family: Lato;
+}
+
+button {
+  background-color: #555;
+  color: white;
+  font-size: 3vh;
+  font-family: inherit;
+  box-sizing: border-box;
+  padding: 2vh 5vh;
+  margin-top: 5vh;
+  width: 70vw;
+  max-width: 500px;
+}
+
+.row {
+  border: 1px solid black;
+}
+
+.col-sm {
+  border: 2px solid pink;
+}
+
 .microblink-ui-component-wrapper {
   max-width: 100vw;
   height: 100vh;
@@ -64,7 +91,6 @@ microblink-ui-web {
   --mb-photo-icon-primary: white;
   --mb-photo-icon-accent: #48b2e8;
 }
-
 
 microblink-ui-web .hide-until-component-is-loaded {
   visibility: hidden;
