@@ -129,8 +129,9 @@
 
     <div id="screen-scanning" class="hidden">
       <video id="camera-feed" playsinline></video>
-      <p id="camera-guides">
-        Point the camera towards the barcode on ID document.
+      <p id="camera-guides" hidden>
+        Apunte la cámara hacia el código de barras en el documento de
+        identificación.
       </p>
     </div>
 
@@ -161,7 +162,7 @@
 
       // UI elements for scanning feedback
       const cameraFeed = document.getElementById('camera-feed');
-      const scanFeedback = document.getElementById('camera-guides');
+      // const scanFeedback = document.getElementById('camera-guides');
 
       /**
        * Check browser support, customize settings and load WASM SDK.
@@ -222,6 +223,7 @@
       async function startScan(sdk) {
         showHideElements(true);
         document.getElementById('screen-scanning')?.classList.remove('hidden');
+        document.getElementById('camera-guides').hidden = false;
 
         // 1. Create a recognizer objects which will be used to recognize single image or stream of images.
         //
@@ -230,10 +232,9 @@
           sdk
         );
         // [OPTIONAL] Create a callbacks object that will receive recognition events, such as detected object location etc.
-        const callbacks = {
-          onDetectionFailed: () =>
-            (scanFeedback.innerText = 'Detection failed'),
-        };
+        // const callbacks = {
+        //   onDetectionFailed: () => (scanFeedback.innerText = 'Detectando'),
+        // };
 
         // 2. Create a RecognizerRunner object which orchestrates the recognition with one or more
         //    recognizer objects.
@@ -243,9 +244,9 @@
           // List of recognizer objects that will be associated with created RecognizerRunner object
           [idBarcodeRecognizer],
           // [OPTIONAL] Should recognition pipeline stop as soon as first recognizer in chain finished recognition
-          false,
+          false
           // [OPTIONAL] Callbacks object that will receive recognition events
-          callbacks
+          // callbacks
         );
 
         // 3. Create a VideoRecognizer object and attach it to HTMLVideoElement that will be used for displaying the camera feed
@@ -298,6 +299,7 @@
 
         // Hide scanning screen and show scan button again
         document.getElementById('screen-scanning')?.classList.add('hidden');
+        document.getElementById('camera-guides').hidden = true;
         showHideElements(false);
       }
 
